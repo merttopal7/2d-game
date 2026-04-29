@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sona İşitme — İşitme Cihazı Mağazası</title>
+  <meta name="description" content="Kendi işitme cihazı mağazanızı işletin! Müşterileri değerlendirin, cihazlar önerin ve işinizi büyütün." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="game-wrapper">
+
+  <!-- ── TITLE ── -->
+  <div id="screen-title" class="screen active">
+    <div class="title-bg"></div>
+    <button class="btn-fullscreen-alt" id="btn-fullscreen-main" title="Tam Ekran">⛶</button>
+    <div class="title-content">
+      <div class="logo-icon">🦻</div>
+      <h1 class="game-title">Sona<span class="accent">İşitme</span></h1>
+      <p class="game-subtitle">Gerçek Bir İşitme Cihazı Mağazası Deneyimi</p>
+      <div class="title-stats">
+        <div class="stat-pill">🏆 En Yüksek Skor: <span id="title-highscore">0</span></div>
+        <div class="stat-pill">💰 En İyi Kazanç: $<span id="title-bestearnings">0</span></div>
+      </div>
+      <button id="btn-play" class="btn-primary pulse-btn">▶ Oyunu Başlat</button>
+      <button id="btn-howto" class="btn-secondary">📖 Nasıl Oynanır</button>
+    </div>
+    <div class="floating-particles" id="title-particles"></div>
+  </div>
+
+  <!-- ── HOW TO PLAY ── -->
+  <div id="screen-howto" class="screen">
+    <div class="modal-card">
+      <h2>🎮 Nasıl Oynanır</h2>
+      <div class="howto-grid">
+        <div class="howto-item"><div class="howto-icon">👤</div><h3>1. Müşterileri Karşıla</h3><p>Müşteriler mağazanıza girer. Danışmanlık başlatmak için üzerlerine tıklayın.</p></div>
+        <div class="howto-item"><div class="howto-icon">🔊</div><h3>2. İşitme Testi</h3><p>Ton çalmak için her frekans düğmesine tıklayın. Müşterinin duyup duymadığını işaretleyin.</p></div>
+        <div class="howto-item"><div class="howto-icon">🎧</div><h3>3. Cihaz Öner</h3><p>Odyogramdaki kayıp profiline göre en uygun işitme cihazını eşleştirin.</p></div>
+        <div class="howto-item"><div class="howto-icon">💰</div><h3>4. Satışı Kapat</h3><p>Kusursuz eşleşmeler bonus nakit ve yıldız kazandırır. Gün bitmeden herkesle ilgilenin!</p></div>
+      </div>
+      <div class="hearing-aid-legend">
+        <h3>Cihaz Rehberi</h3>
+        <div class="legend-grid">
+          <div class="legend-item"><span class="badge bte">BTE</span> Kulak Arkası — Hafiften İleriye Kayıp</div>
+          <div class="legend-item"><span class="badge ite">ITE</span> Kulak İçi — Hafiften Ortaya Kayıp</div>
+          <div class="legend-item"><span class="badge ric">RIC</span> Kanal İçi Alıcı — Hafif/Orta, Estetik</div>
+          <div class="legend-item"><span class="badge cic">CIC</span> Tamamen Kanal İçi — Hafif, Neredeyse Görünmez</div>
+          <div class="legend-item"><span class="badge bch">BCH</span> Kemik Yolu — İletim Tipi İşitme Kaybı</div>
+          <div class="legend-item"><span class="badge prem">SMART</span> Premium Akıllı — İleri / Çok İleri Kayıp</div>
+        </div>
+      </div>
+      <button id="btn-howto-back" class="btn-primary">← Geri</button>
+    </div>
+  </div>
+
+  <!-- ── GAME ── -->
+  <div id="screen-game" class="screen">
+    <div id="hud" style="background: transparent; border: none; backdrop-filter: none; box-shadow: none;">
+      <div class="hud-left">
+        <div class="hud-item" id="hud-money">💰 $<span id="hud-money-val">0</span></div>
+        <div class="hud-item" id="hud-score">⭐ <span id="hud-score-val">0</span></div>
+        <div class="hud-item" id="hud-day" style="display:none">📅 Gün <span id="hud-day-val">1</span></div>
+      </div>
+      <div class="hud-center" style="display: none;">Sona İşitme Mağazası</div>
+      <div class="hud-right">
+        <div class="hud-item"><span id="hud-served">0</span> hizmet verildi</div>
+        <div id="timer-bar-wrap" style="display:none">
+          <div class="timer-label">Gün bitimine kalan</div>
+          <div id="timer-bar"><div id="timer-fill"></div></div>
+        </div>
+        <button id="btn-toggle-spawn" class="btn-hud active" title="Müşteri Kabulü">👥</button>
+        <button id="btn-open-inventory" class="btn-hud" title="Inventory">📦</button>
+        <button id="btn-lock-camera" class="btn-hud active" title="Kamerayı Sabitle">🔒</button>
+        <button id="btn-fullscreen" class="btn-hud" title="Tam Ekran">⛶</button>
+        <button id="btn-pause" class="btn-hud">⏸</button>
+      </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Character Interaction Popup -->
+    <div id="char-popup" class="hidden">
+      <div id="char-popup-content">
+        <div class="char-popup-header">
+          <div id="char-popup-emoji">👤</div>
+          <div class="char-popup-info">
+            <div id="char-popup-name">Müşteri Adı</div>
+            <div id="char-popup-desc">Bilgi yükleniyor...</div>
+          </div>
+        </div>
+        <div class="char-popup-actions">
+          <button id="btn-char-consult" class="btn-primary">Danışmanlık</button>
+          <div class="char-actions-wrapper">
+            <button id="btn-char-more" class="btn-secondary" title="Daha Fazla">•••</button>
+            <div id="char-more-menu" class="dropdown-menu hidden">
+              <button id="btn-char-doctor-follow" class="dropdown-item">🏃 Takip Et (Doktor)</button>
+              <button id="btn-char-customer-follow" class="dropdown-item">🚶 Peşinden Gelsin</button>
+              <button id="btn-char-remove" class="dropdown-item" style="color: #e74c3c;">🚪 Ayrılmasını İste</button>
+            </div>
+          </div>
+          <button id="btn-char-close" class="btn-secondary" title="Kapat">✕</button>
+        </div>
+      </div>
+      <div id="char-popup-tail"></div>
+    </div>
+
+    <!-- Waiting List Panel -->
+    <div id="waiting-list-panel">
+      <div id="waiting-list-header">
+        <span>Bekleyenler (<span id="waiting-count">0</span>)</span>
+      </div>
+    </div>
+
+    <!-- Full Waiting List Modal -->
+    <div id="full-waiting-modal" class="screen hidden">
+      <div class="modal-card" id="full-waiting-card">
+        <div class="modal-header">
+          <h2>Bekleme Listesi</h2>
+          <button id="btn-close-full-waiting" class="btn-secondary">✕</button>
+        </div>
+        <div id="full-waiting-content">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div id="inventory-modal" class="screen hidden">
+      <div class="modal-card" id="inventory-card">
+        <div class="modal-header">
+          <h2>Inventory</h2>
+          <button id="btn-close-inventory" class="btn-secondary">✕</button>
+        </div>
+        <div id="inventory-content"></div>
+        <div id="inventory-item-popup" class="hidden">
+          <div id="inventory-item-popup-card">
+            <div id="inventory-item-popup-title">Item</div>
+            <div id="inventory-item-popup-stock">Stock: 0</div>
+            <div id="inventory-item-popup-actions">
+              <button id="btn-inventory-sell" class="btn-primary">Sell</button>
+              <button id="btn-inventory-move-shop" class="btn-secondary">Move to Shop</button>
+              <button id="btn-inventory-action-close" class="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consultation Panel -->
+    <div id="consultation-panel" class="hidden">
+      <div id="cp-header">
+        <button id="cp-close">✕</button>
+        <div id="cp-avatar"></div>
+        <div id="cp-info"><div id="cp-name">—</div><div id="cp-desc">—</div></div>
+      </div>
+
+      <div id="cp-stepper">
+        <div class="step active" id="step-1">1. Adım: Test</div>
+        <div class="step-line"></div>
+        <div class="step" id="step-2">2. Adım: Mağaza</div>
+      </div>
+
+      <!-- Phase: Test -->
+      <div id="cp-phase-test" class="cp-phase">
+        <div class="test-top-row">
+          <div id="test-controls-col">
+            <div id="freq-display">
+              <canvas id="freq-wave" width="300" height="50"></canvas>
+              <div id="freq-label">Başlamak için bir frekans seçin</div>
+            </div>
+            
+            <div id="freq-buttons">
+              <button class="freq-btn" data-freq="250">250 Hz</button>
+              <button class="freq-btn" data-freq="500">500 Hz</button>
+              <button class="freq-btn" data-freq="1000">1 kHz</button>
+              <button class="freq-btn" data-freq="2000">2 kHz</button>
+              <button class="freq-btn" data-freq="4000">4 kHz</button>
+              <button class="freq-btn" data-freq="8000">8 kHz</button>
+            </div>
+          </div>
+          
+          <div id="audiogram-container">
+            <canvas id="audiogram" width="400" height="200"></canvas>
+          </div>
+        </div>
+        <button id="btn-test-done" class="btn-primary" disabled>Cihaz Öner →</button>
+      </div>
+
+      <!-- Chat Bubble Overlay (Above Doctor) -->
+      <div id="doctor-chat-bubble" class="hidden">
+        <div id="chat-bubble-text">...</div>
+        <div class="chat-bubble-tail"></div>
+      </div>
+
+      <!-- Phase: Recommend -->
+      <div id="cp-phase-recommend" class="cp-phase hidden">
+        <div id="rec-info-col">
+          <h3>En İyi İşitme Cihazını Seçin</h3>
+          <p class="cp-instructions">Odyograma dayanarak, bu hasta için en uygun cihazı seçin.</p>
+          <div id="rec-feedback" class="hidden"></div>
+        </div>
+        <div id="product-grid"></div>
+        <button id="btn-confirm" class="btn-primary hidden">Satışı Onayla</button>
+      </div>
+    </div>
+
+    <div id="toast" class="hidden"></div>
+  </div>
+
+  <!-- ── DAY SUMMARY ── -->
+  <div id="screen-summary" class="screen">
+    <button class="btn-fullscreen-alt" id="btn-fullscreen-sum" title="Tam Ekran">⛶</button>
+    <div class="modal-card summary-card">
+      <div id="sum-icon">🌟</div>
+      <h2 id="sum-title">Gün Tamamlandı!</h2>
+      <div class="summary-stats">
+        <div class="sum-stat"><span class="sum-label">Hizmet Verilen Müşteri</span><span class="sum-val" id="sum-served">0</span></div>
+        <div class="sum-stat"><span class="sum-label">Bugünkü Kazanç</span><span class="sum-val green" id="sum-earnings">$0</span></div>
+        <div class="sum-stat"><span class="sum-label">Kusursuz Satış ⭐</span><span class="sum-val yellow" id="sum-perfect">0</span></div>
+        <div class="sum-stat"><span class="sum-label">Toplam Skor</span><span class="sum-val blue" id="sum-score">0</span></div>
+      </div>
+      <div id="sum-grade" class="grade-badge">A+</div>
+      <div id="sum-unlock" class="unlock-banner hidden">🎉 Yeni cihaz açıldı!</div>
+      <div class="summary-actions">
+        <button id="btn-next-day" class="btn-primary">Sonraki Gün →</button>
+        <button id="btn-quit-sum" class="btn-secondary">🏠 Ana Menü</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME OVER ── -->
+  <div id="screen-gameover" class="screen">
+    <button class="btn-fullscreen-alt" id="btn-fullscreen-go" title="Tam Ekran">⛶</button>
+    <div class="modal-card">
+      <div class="go-icon">😔</div>
+      <h2>Mağaza Kapandı</h2>
+      <p id="go-reason" style="color:var(--clr-muted);font-size:15px">Mağaza kapılarını kapatmak zorunda kaldı...</p>
+      <div class="summary-stats">
+        <div class="sum-stat"><span class="sum-label">Final Skoru</span><span class="sum-val blue" id="go-score">0</span></div>
+        <div class="sum-stat"><span class="sum-label">Toplam Kazanç</span><span class="sum-val green" id="go-earnings">$0</span></div>
+        <div class="sum-stat"><span class="sum-label">Hayatta Kalınan Gün</span><span class="sum-val" id="go-days">0</span></div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <button id="btn-retry" class="btn-primary">🔄 Tekrar Dene</button>
+        <button id="btn-go-menu" class="btn-secondary">🏠 Ana Menü</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAUSE ── -->
+  <div id="screen-pause" class="screen">
+    <div class="modal-card" style="max-width:340px;gap:16px">
+      <h2>⏸ Duraklatıldı</h2>
+      <p style="color:var(--clr-muted)">Kısa bir ara!</p>
+      <button id="btn-resume" class="btn-primary">▶ Devam Et</button>
+      <button id="btn-pause-quit" class="btn-secondary">🏠 Ana Menü</button>
+    </div>
+  </div>
+
+  <!-- Portrait Orientation Warning -->
+  <div id="portrait-overlay">
+    <div class="portrait-message">
+      <span style="font-size: 3em; display: block; margin-bottom: 20px;">🔄</span>
+      <h2>Lütfen cihazınızı döndürün</h2>
+      <p>Sona İşitme Mağazası en iyi yatay (peyzaj) modda oynanır.</p>
+    </div>
+  </div>
+
+</div>
+<script src="dist/bundle.js"></script>
+
+    <!-- Plant Interaction Popup -->
+    <div id="plant-popup" class="hidden">
+      <div id="plant-popup-content">
+        <button id="btn-plant-water" class="btn-primary" style="width: 100%; justify-content: center;">💧</button>
+        <button id="btn-plant-move" class="btn-secondary" style="width: 100%; justify-content: center;">Taşı</button>
+        <button id="btn-plant-remove" class="btn-secondary" style="width: 100%; justify-content: center; background: rgba(231, 76, 60, 0.1); color: #e74c3c;">Kaldır</button>
+        <button id="btn-plant-close" class="btn-secondary" style="width: 100%; justify-content: center;">Kapat</button>
+      </div>
+      <div id="plant-popup-tail"></div>
+    </div>
+
+</body>
+</html>
