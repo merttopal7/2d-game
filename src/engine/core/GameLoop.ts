@@ -746,6 +746,7 @@ export class GameLoop {
     
     await db.setVal('playerHead', this.selectedHeadStyle);
     await db.setVal('playerName', name);
+    await db.setVal('isCharSelected', true);
     
     this.renderer.player.headStyle = this.selectedHeadStyle;
     this.renderer.player.name = name;
@@ -787,10 +788,13 @@ export class GameLoop {
     resetCustomerIds();
     
     // Check for character selection first
+    const isCharSelected = await db.getVal('isCharSelected', false);
     const savedHead = await db.getVal('playerHead', null);
     const savedName = await db.getVal('playerName', null);
     
-    if (savedHead === null || savedName === null) {
+    // If flag is missing OR data is missing, force fresh selection and wipe any partial/old data
+    if (!isCharSelected || savedHead === null || savedName === null || !savedName.trim()) {
+      await db.clearAll(); // Wipe DB to ensure clean start
       this.openCharSelection();
       return;
     }
