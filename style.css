@@ -1324,10 +1324,13 @@ html, body {
    CHARACTER SELECTION
    ========================================================= */
 #char-select-layout {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   gap: 24px;
   width: 100%;
   margin-top: 15px;
+  align-items: flex-start;
 }
 #char-select-left {
   flex: 1;
@@ -1374,7 +1377,7 @@ html, body {
 }
 @media (max-width: 600px) {
   #char-select-layout {
-    flex-direction: row; /* Stay side by side as requested */
+    flex-direction: row !important; /* Stay side by side as requested */
     gap: 12px;
   }
   #char-select-right {
