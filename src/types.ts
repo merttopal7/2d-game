@@ -38,6 +38,7 @@ export interface CustomerProfile {
   idealProduct: ProductId;
   patience: number;     // seconds before they leave
   waitColor: string;    // color of patience bar
+  headStyle: number;    // index for drawing custom head (0-9)
 }
 
 export interface SaleRecord {

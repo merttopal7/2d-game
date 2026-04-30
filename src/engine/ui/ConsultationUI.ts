@@ -1,7 +1,7 @@
 // ─── ConsultationUI: product recommendation phase ─────────────────────────────
 
 import type { AudiogramData, CustomerProfile, ProductId } from '../../types';
-import { PRODUCTS, PRODUCT_MAP, getAvailableProducts } from '../../data/products';
+import { PRODUCTS, PRODUCT_MAP } from '../../data/products';
 import { AudioEngine } from '../core/AudioEngine';
 
 export interface SaleResult {
@@ -17,7 +17,7 @@ export class ConsultationUI {
   private audiogram: AudiogramData | null = null;
   private selectedProduct: ProductId | null = null;
   private onSaleCallback?: (result: SaleResult) => void;
-  private day = 1;
+  private stocks: Record<string, number> = {};
 
   constructor(audio: AudioEngine) {
     this.audio = audio;
@@ -26,11 +26,12 @@ export class ConsultationUI {
 
   onSale(cb: (result: SaleResult) => void) { this.onSaleCallback = cb; }
 
-  setDay(day: number) { this.day = day; }
+  setDay(_day: number) { /* No longer needed but kept for compatibility */ }
 
-  show(customer: CustomerProfile, audiogram: AudiogramData) {
+  show(customer: CustomerProfile, audiogram: AudiogramData, stocks: Record<string, number>) {
     this.customer = customer;
     this.audiogram = audiogram;
+    this.stocks = stocks;
     this.selectedProduct = null;
 
     document.getElementById('cp-phase-test')!.classList.add('hidden');
@@ -44,31 +45,35 @@ export class ConsultationUI {
   private renderProducts() {
     const grid = document.getElementById('product-grid')!;
     grid.innerHTML = '';
-    const available = getAvailableProducts(this.day);
 
     PRODUCTS.forEach(p => {
       const card = document.createElement('div');
       card.className = 'product-card';
-      const isAvailable = available.find(a => a.id === p.id);
-      if (!isAvailable) card.classList.add('locked');
+      const stock = this.stocks[p.id] || 0;
+      const hasStock = stock > 0;
+
+      if (!hasStock) card.classList.add('out-of-stock');
 
       card.innerHTML = `
-        <div class="pc-icon">${p.icon}</div>
+        <div class="pc-icon"><i data-lucide="${p.icon}"></i></div>
         <div class="pc-info-row">
           <div class="pc-name">${p.name}</div>
           <span class="pc-badge ${p.badgeClass}">${p.shortName}</span>
         </div>
         <div class="pc-price">$${p.price.toLocaleString()}</div>
+        <div class="pc-stock ${stock === 0 ? 'empty' : ''}">Stok: ${stock}</div>
         <p class="pc-desc">${p.description}</p>
-        ${!isAvailable ? '<div class="pc-locked-msg">🔒 Gün '+p.unlockDay+'</div>' : ''}
+        ${!hasStock ? '<div class="pc-locked-msg">Stok Yok</div>' : ''}
       `;
       card.style.borderColor = p.color + '40';
 
-      if (isAvailable) {
+      if (hasStock) {
         card.addEventListener('click', () => this.selectProduct(p.id));
       }
       grid.appendChild(card);
     });
+
+    (window as any).lucide?.createIcons();
   }
 
   private selectProduct(id: ProductId) {

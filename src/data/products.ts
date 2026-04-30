@@ -5,7 +5,7 @@ export const PRODUCTS: Product[] = [
     id: 'CIC',
     name: 'Tamamen Kanal İçi',
     shortName: 'CIC',
-    icon: '🔵',
+    icon: 'ear',
     price: 850,
     description: 'Neredeyse görünmez. Hafif işitme kaybı için en iyisi.',
     badgeClass: 'cic',
@@ -17,7 +17,7 @@ export const PRODUCTS: Product[] = [
     id: 'RIC',
     name: 'Kanal İçi Alıcı',
     shortName: 'RIC',
-    icon: '🟡',
+    icon: 'ear',
     price: 1200,
     description: 'Estetik ve konforlu. Hafiften ortaya.',
     badgeClass: 'ric',
@@ -29,7 +29,7 @@ export const PRODUCTS: Product[] = [
     id: 'ITE',
     name: 'Kulak İçi',
     shortName: 'ITE',
-    icon: '🟢',
+    icon: 'ear',
     price: 1500,
     description: 'Özel kalıp. Hafiften ortaya kayıp.',
     badgeClass: 'ite',
@@ -41,7 +41,7 @@ export const PRODUCTS: Product[] = [
     id: 'BTE',
     name: 'Kulak Arkası',
     shortName: 'BTE',
-    icon: '🔷',
+    icon: 'ear',
     price: 1800,
     description: 'Güçlü ve çok yönlü. Hafiften ileriye.',
     badgeClass: 'bte',
@@ -53,7 +53,7 @@ export const PRODUCTS: Product[] = [
     id: 'BCH',
     name: 'Kemik Yolu',
     shortName: 'BCH',
-    icon: '🔴',
+    icon: 'ear',
     price: 2200,
     description: 'Dış kulağı devre dışı bırakır. İletim tipi kayıp için.',
     badgeClass: 'bch',
@@ -65,7 +65,7 @@ export const PRODUCTS: Product[] = [
     id: 'SMART',
     name: 'Premium Akıllı',
     shortName: 'SMART',
-    icon: '🌟',
+    icon: 'ear',
     price: 3500,
     description: 'Yapay zeka destekli, Bluetooth. İleri ve çok ileri.',
     badgeClass: 'prem',
@@ -79,6 +79,6 @@ export const PRODUCT_MAP = new Map<ProductId, Product>(
   PRODUCTS.map(p => [p.id, p])
 );
 
-export function getAvailableProducts(unlockedDay: number): Product[] {
-  return PRODUCTS.filter(p => p.unlockDay <= unlockedDay);
+export function getAvailableProducts(_unlockedDay: number): Product[] {
+  return PRODUCTS;
 }

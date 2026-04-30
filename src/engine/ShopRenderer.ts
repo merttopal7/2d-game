@@ -1,6 +1,8 @@
 import { BaseMap } from './maps/BaseMap';
 import { ShopMap } from './maps/ShopMap';
 import { CafeMap } from './maps/CafeMap';
+import { SamandagMap } from './maps/SamandagMap';
+import { MarketMap } from './maps/MarketMap';
 import { db } from './core/Database';
 // ─── ShopRenderer: draws the shop scene + animated customers on canvas ────────
 
@@ -43,6 +45,7 @@ export class ShopRenderer {
   private onCameraUnlock?: () => void;
   private onClickCar?: () => void;
   private onPlantRemoved?: (plantType: 'flower' | 'bush' | 'tree') => void;
+  private onBuffetClick?: () => void;
 
   public MAP_W = 2400;
   public MAP_H = 1000;
@@ -59,7 +62,9 @@ export class ShopRenderer {
   public isTracing = false;
   public followingCustomerId: number | null = null;
   public customerFollowsDoctorId: number | null = null;
-  public currentMap: 'shop' | 'cafe' = 'shop';
+  public currentMap: 'shop' | 'cafe' | 'samandag' | 'market' = 'shop';
+  public weather: 'sunny' | 'rainy' = 'rainy';
+  private rainDrops: Array<{x: number, y: number, len: number, speed: number}> = [];
   private maps: Map<string, BaseMap> = new Map();
   private plants: Plant[] = [];
   private pendingPlant: Plant | null = null;
@@ -79,7 +84,7 @@ export class ShopRenderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.resize();
-    this.player = new Player(this.MAP_W * 0.65, this.MAP_H * 0.40);
+    this.player = new Player(1120, 610);
     window.addEventListener('resize', () => this.resize());
     
     // Mouse interactions for panning and clicking
@@ -166,6 +171,7 @@ export class ShopRenderer {
             this.isManualCamera = true;
             if (this.isCameraLocked) {
               this.isCameraLocked = false;
+              this.focusedCustomerId = null;
               if (this.onCameraUnlock) this.onCameraUnlock();
             }
           }
@@ -297,6 +303,7 @@ export class ShopRenderer {
             this.isManualCamera = true;
             if (this.isCameraLocked) {
               this.isCameraLocked = false;
+              this.focusedCustomerId = null;
               if (this.onCameraUnlock) this.onCameraUnlock();
             }
           }
@@ -332,6 +339,8 @@ export class ShopRenderer {
     this.isTraveling = false;
         this.maps.set('shop', new ShopMap(this));
     this.maps.set('cafe', new CafeMap(this));
+    this.maps.set('samandag', new SamandagMap(this));
+    this.maps.set('market', new MarketMap(this));
     this.playerCar = new Car('player_car', 1050, 580, '#ffffff', 'passenger');
     this.cars = [this.playerCar];
     // initPlants is now called via setMap (async)
@@ -356,6 +365,7 @@ export class ShopRenderer {
     this.cameraY = localY * scale - this.canvas.height / 2;
         if (this.isCameraLocked) {
           this.isCameraLocked = false;
+          this.focusedCustomerId = null; // Clear focus on manual move
           if (this.onCameraUnlock) this.onCameraUnlock();
         }
     this.clampCamera();
@@ -365,6 +375,7 @@ export class ShopRenderer {
   onUnlockCamera(cb: () => void) { this.onCameraUnlock = cb; }
   onCarClick(cb: () => void) { this.onClickCar = cb; }
   onPlantRemove(cb: (plantType: 'flower' | 'bush' | 'tree') => void) { this.onPlantRemoved = cb; }
+  onBuffetClickEvent(cb: () => void) { this.onBuffetClick = cb; }
 
   async placeFlowerFromStorage(): Promise<boolean> {
     if (this.currentMap !== 'shop') return false;
@@ -454,9 +465,7 @@ export class ShopRenderer {
   setConsultationOpen(isOpen: boolean) {
     this.isConsultationOpen = isOpen;
     if (!isOpen) {
-      // Move doctor back to the main counter when finished
-      this.player.targetX = this.MAP_W * 0.65;
-      this.player.targetY = this.MAP_H * 0.40;
+      // Logic for auto-moving the doctor to counter was removed to keep them at the car or current spot
     }
   }
   
@@ -499,14 +508,26 @@ export class ShopRenderer {
     (this.playerCar as any).state = 'leaving'; // Reuse existing state logic
   }
 
-    async setMap(mapType: 'shop' | 'cafe') {
+    async setMap(mapType: 'shop' | 'cafe' | 'samandag' | 'market') {
     this.currentMap = mapType;
     this.customers = [];
     
-    this.player.x = 1080;
-    this.player.y = 650;
+    // Standardized positions for player and car across all maps
+    this.player.x = 1120;
+    this.player.y = 610; // Next to car
+    
+    if (this.playerCar) {
+      this.playerCar.x = 1050;
+      this.playerCar.y = 580; // On the sidewalk
+    }
+
     this.player.targetX = this.player.x;
     this.player.targetY = this.player.y;
+
+    // Snap camera to player on map change
+    this.cameraX = this.player.x - this.canvas.width / 2;
+    this.cameraY = this.player.y - this.canvas.height / 2;
+    this.clampCamera();
 
     const mapObj = this.maps.get(mapType);
     if (mapObj) {
@@ -693,7 +714,7 @@ export class ShopRenderer {
         if (car.x > this.MAP_W + 250) {
           if (car === this.playerCar && this.isTraveling) {
             this.isTraveling = false;
-            // Reset car to starting position for the new map
+            // Reset car to starting position for the new map (Standardized)
             this.playerCar.x = 1050;
             this.playerCar.y = 580;
             (this.playerCar as any).state = 'idle';
@@ -710,12 +731,23 @@ export class ShopRenderer {
     if (this.isCameraLocked && !this.isDragging && !this.isDraggingMiniMap) {
       let targetX = this.player.x, targetY = this.player.y;
       
+      // Follow focused customer if set
+      if (this.focusedCustomerId !== null) {
+        const targetC = this.customers.find(c => c.profile.id === this.focusedCustomerId);
+        if (targetC) {
+          targetX = targetC.x;
+          targetY = targetC.y;
+        }
+      }
+
       // Follow car if traveling
       if (this.isTraveling && this.playerCar) {
         targetX = this.playerCar.x + 70;
         targetY = this.playerCar.y + 30;
       } else if (this.isTracing || this.customerFollowsDoctorId || this.isConsultationOpen) {
-        targetY = this.player.y - this.canvas.height * 0.25;
+        if (this.focusedCustomerId === null) {
+          targetY = this.player.y - this.canvas.height * 0.25;
+        }
       }
 
       let targetCamX = targetX - this.canvas.width / 2;
@@ -807,7 +839,78 @@ export class ShopRenderer {
     
     this.drawEntities();
     ctx.restore();
+    
+    // Draw weather effect (overlay)
+    if (this.weather === 'rainy') {
+      this.drawRain();
+    }
+    
     this.drawMiniMap();
+  }
+
+  private drawRain() {
+    const { ctx, canvas } = this;
+    
+    // Initialize rain drops if empty
+    if (this.rainDrops.length === 0) {
+      for (let i = 0; i < 200; i++) {
+        this.rainDrops.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          len: 10 + Math.random() * 20,
+          speed: 8 + Math.random() * 12
+        });
+      }
+    }
+
+    // Draw and update drops
+    ctx.save();
+    ctx.strokeStyle = 'rgba(174, 194, 224, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    
+    for (const drop of this.rainDrops) {
+      // Determine if drop is "outside" based on world Y
+      const worldX = drop.x + this.cameraX;
+      const worldY = drop.y + this.cameraY;
+      let isOutside = true;
+      
+      // Shop and Cafe have interiors above Y=560 (approx)
+      if (this.currentMap === 'shop' || this.currentMap === 'cafe') {
+        if (worldY < 560) isOutside = false;
+      }
+      
+      // Samandag sheltered areas
+      if (this.currentMap === 'samandag') {
+        // Under the seating roof (x: 1600-2050, y: >350)
+        if (worldX > 1580 && worldX < 2070 && worldY > 350 && worldY < 540) isOutside = false;
+        // Under the buffet roof (x: 2100-2320, y: >330)
+        if (worldX > 2080 && worldX < 2340 && worldY > 330 && worldY < 520) isOutside = false;
+      }
+
+      if (isOutside) {
+        ctx.moveTo(drop.x, drop.y);
+        ctx.lineTo(drop.x + 1.5, drop.y + drop.len);
+      }
+      
+      drop.y += drop.speed;
+      drop.x += 0.5; // slight drift
+      
+      if (drop.y > canvas.height) {
+        drop.y = -drop.len;
+        drop.x = Math.random() * canvas.width;
+      }
+    }
+    ctx.stroke();
+
+    // Rainy tint overlay (Only for outdoor area if possible, or just lighter)
+    // To keep it simple and clean, we apply a subtle tint to the whole screen 
+    // but the actual drops only appear outside.
+    ctx.fillStyle = 'rgba(20, 30, 48, 0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.restore();
   }
 
           private drawMiniMap() {
@@ -975,6 +1078,30 @@ export class ShopRenderer {
         return;
       }
     }
+
+    // Check Buffet/Cafe Counter click
+    if (this.currentMap === 'samandag') {
+      const bx = 2100, by = 380, bw = 220, bh = 140;
+      if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+        if (this.onBuffetClick) this.onBuffetClick();
+        this.targetMarker = { x: mx, y: my, alpha: 1.0, type: 'interact' };
+        return;
+      }
+    } else if (this.currentMap === 'cafe') {
+      const bx = 100, by = 80, bw = 600, bh = 140;
+      if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+        if (this.onBuffetClick) this.onBuffetClick();
+        this.targetMarker = { x: mx, y: my, alpha: 1.0, type: 'interact' };
+        return;
+      }
+    } else if (this.currentMap === 'market') {
+      const bx = 1600, by = 450, bw = 180, bh = 80;
+      if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+        if (this.onBuffetClick) this.onBuffetClick();
+        this.targetMarker = { x: mx, y: my, alpha: 1.0, type: 'interact' };
+        return;
+      }
+    }
     
         // Move Audiologist
     this.closePlantPopup(); // Close menu if moving elsewhere
@@ -984,6 +1111,7 @@ export class ShopRenderer {
     this.player.clickTime = this.time; 
     this.isTracing = false;
     this.followingCustomerId = null;
+    this.focusedCustomerId = null; // Unlock camera focus when moving
   }
 
   public drawMonitor(ctx: CanvasRenderingContext2D, x: number, y: number) {

@@ -28,11 +28,18 @@ export class TravelUI {
                             <span class="desc">Kahve Molası</span>
                         </div>
                     </button>
-                    <button class="travel-btn disabled" data-dest="home">
-                        <span class="icon">🏠</span>
+                    <button class="travel-btn" data-dest="samandag">
+                        <span class="icon">🏖️</span>
                         <div class="info">
-                            <span class="name">Ev</span>
-                            <span class="desc">Yakında</span>
+                            <span class="name">Samandağ</span>
+                            <span class="desc">Sahil & Deniz</span>
+                        </div>
+                    </button>
+                    <button class="travel-btn" data-dest="market">
+                        <span class="icon">⚙️</span>
+                        <div class="info">
+                            <span class="name">Teknik Market</span>
+                            <span class="desc">Cihaz Alımı</span>
                         </div>
                     </button>
                 </div>
@@ -46,8 +53,9 @@ export class TravelUI {
             if (this.onClose) this.onClose();
         });
         
-        this.overlay.querySelectorAll('.travel-btn:not(.disabled)').forEach(btn => {
+        this.overlay.querySelectorAll('.travel-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                if (btn.classList.contains('disabled')) return;
                 const dest = (btn as HTMLElement).dataset.dest;
                 if (dest) {
                     this.onTravel(dest);
@@ -57,7 +65,17 @@ export class TravelUI {
         });
     }
 
-    show() {
+    show(currentDest: string) {
+        this.overlay.querySelectorAll('.travel-btn').forEach(btn => {
+            const dest = (btn as HTMLElement).dataset.dest;
+            if (dest === currentDest) {
+                btn.classList.add('active');
+                btn.classList.add('disabled');
+            } else if (dest !== 'home') { // Don't re-enable "home" if it's permanently disabled
+                btn.classList.remove('active');
+                btn.classList.remove('disabled');
+            }
+        });
         this.overlay.classList.remove('hidden');
     }
 

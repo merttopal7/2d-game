@@ -59,18 +59,8 @@ export class ShopMap extends BaseMap {
       }
     }
 
-    // 2. Road & Sidewalk & Garden
-    ctx.fillStyle = '#34495e';
-    ctx.fillRect(0, sidewalkY, W, roadY - sidewalkY);
-    ctx.fillStyle = '#1c1c1c';
-    ctx.fillRect(0, roadY, W, gardenY - roadY);
-    ctx.fillStyle = '#f1c40f';
-    const roadMid = roadY + (gardenY - roadY) / 2;
-    for (let i = 0; i < W; i += 80) ctx.fillRect(i, roadMid - 2, 40, 4);
-    ctx.fillStyle = '#1b5e20';
-    ctx.fillRect(0, gardenY, W, H - gardenY);
-
-    this.renderer.cars.forEach((car: any) => car.draw(ctx));
+    // 2. Common Background (Sidewalk, Road, Garden, Cars)
+    this.drawCommonBackground(ctx, W, H);
 
     // 3. New Objects: Benches (Waiting Room)
     [0.15, 0.45].forEach((xr) => {
@@ -125,27 +115,7 @@ export class ShopMap extends BaseMap {
     ctx.fillStyle = '#312515';
     ctx.fillRect(mmX + mmW * 0.70, mmY, mmW * 0.30, 560 * scale);
 
-    // Sidewalk (grey strip)
-    ctx.fillStyle = '#4a5568';
-    ctx.fillRect(mmX, mmY + 560 * scale, mmW, 80 * scale);
-
-    // Road (dark asphalt)
-    ctx.fillStyle = '#1a202c';
-    ctx.fillRect(mmX, mmY + 640 * scale, mmW, 100 * scale);
-    // Road lane dashes
-    ctx.fillStyle = '#f6e05e';
-    for (let lx = mmX + 10; lx < mmX + mmW - 10; lx += 14 * scale + 6) {
-      ctx.fillRect(lx, mmY + 690 * scale, 10 * scale, 2 * scale);
-    }
-
-    // Garden / grass strip
-    ctx.fillStyle = '#276742';
-    ctx.fillRect(mmX, mmY + 740 * scale, mmW, (this.renderer.MAP_H - 740) * scale);
-    // Garden texture dots
-    ctx.fillStyle = '#38a169';
-    for (let gx = mmX + 4; gx < mmX + mmW - 4; gx += 8 * scale) {
-      ctx.fillRect(gx, mmY + 760 * scale, 3 * scale, 3 * scale);
-    }
+    this.drawCommonMiniMap(ctx, mmX, mmY, mmW, mmH, scale);
 
     // Divider line (interior wall)
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';

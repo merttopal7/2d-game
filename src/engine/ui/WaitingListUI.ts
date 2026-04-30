@@ -31,7 +31,9 @@ export class WaitingListUI {
     div.style.cursor = 'pointer';
     div.innerHTML = `
       <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-        <span style="font-size: 1.4em;">${c.profile.emoji}</span>
+        <span style="font-size: 1.4em; display: flex; align-items: center; color: #fff;">
+          <i data-lucide="user" style="width: 24px; height: 24px;"></i>
+        </span>
         <div style="flex-grow: 1; font-size: 0.9em; line-height: 1.2;">
           <div style="font-weight: bold; color: #fff;">${c.profile.name}</div>
           <div class="waiting-patience-bar" style="width: ${pct * 100}%; background: ${color};"></div>
@@ -68,6 +70,7 @@ export class WaitingListUI {
 
     // Only populate the full modal list
     waiting.forEach(c => this.renderItem(c, fullContent));
+    (window as any).lucide?.createIcons();
   }
 
   private closeFullModal() {

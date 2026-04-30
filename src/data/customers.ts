@@ -7,61 +7,61 @@ const TEMPLATES: CustomerTemplate[] = [
     name: 'Müzeyyen', age: 72, emoji: '👵',
     description: 'Emekli öğretmen — konuşmaları duymakta zorlanıyor',
     lossLevel: 'moderate', isConductive: false, idealProduct: 'ITE',
-    patience: 45, waitColor: '#27ae60',
+    patience: 45, waitColor: '#27ae60', headStyle: 1
   },
   {
     name: 'Hasan', age: 80, emoji: '👴',
     description: 'Eski asker — on yıllarca yüksek gürültüye maruz kalmış',
     lossLevel: 'severe', isConductive: false, idealProduct: 'BTE',
-    patience: 55, waitColor: '#27ae60',
+    patience: 55, waitColor: '#27ae60', headStyle: 2
   },
   {
     name: 'Selin', age: 34, emoji: '👩',
     description: 'Müzik öğretmeni — hafif yüksek frekans kaybı',
     lossLevel: 'mild', isConductive: false, idealProduct: 'RIC',
-    patience: 35, waitColor: '#f5c518',
+    patience: 35, waitColor: '#f5c518', headStyle: 3
   },
   {
     name: 'Deniz', age: 28, emoji: '🧑',
     description: 'Yazılım mühendisi — gizli çözüm istiyor',
     lossLevel: 'mild', isConductive: false, idealProduct: 'CIC',
-    patience: 30, waitColor: '#f5c518',
+    patience: 30, waitColor: '#f5c518', headStyle: 4
   },
   {
     name: 'Ece', age: 45, emoji: '👱‍♀️',
     description: 'Otoskleroz ile doğmuş — kemik yolu sorunu',
     lossLevel: 'conductive', isConductive: true, idealProduct: 'BCH',
-    patience: 50, waitColor: '#27ae60',
+    patience: 50, waitColor: '#27ae60', headStyle: 5
   },
   {
     name: 'Görkem', age: 88, emoji: '🧓',
     description: 'İleri derece işitme kaybı — maksimum güçlendirme gerekiyor',
     lossLevel: 'profound', isConductive: false, idealProduct: 'SMART',
-    patience: 60, waitColor: '#27ae60',
+    patience: 60, waitColor: '#27ae60', headStyle: 6
   },
   {
     name: 'Ayşe', age: 55, emoji: '👩‍🦱',
     description: 'Sık konserlere gider — orta derece çift taraflı kayıp',
     lossLevel: 'moderate', isConductive: false, idealProduct: 'BTE',
-    patience: 40, waitColor: '#f5c518',
+    patience: 40, waitColor: '#f5c518', headStyle: 7
   },
   {
     name: 'Tayfun', age: 62, emoji: '🧔',
     description: 'İnşaat işçisi — düşük frekanslı işitme hasarı',
     lossLevel: 'severe', isConductive: false, idealProduct: 'BTE',
-    patience: 45, waitColor: '#27ae60',
+    patience: 45, waitColor: '#27ae60', headStyle: 8
   },
   {
     name: 'Lale', age: 19, emoji: '👧',
     description: 'Üniversite öğrencisi — kulaklık kaynaklı hafif kayıp',
     lossLevel: 'mild', isConductive: false, idealProduct: 'CIC',
-    patience: 25, waitColor: '#e74c3c',
+    patience: 25, waitColor: '#e74c3c', headStyle: 9
   },
   {
     name: 'Rıfat', age: 76, emoji: '👨‍🦳',
     description: 'Yaşa bağlı işitme kaybı — presbiakuzi',
     lossLevel: 'moderate', isConductive: false, idealProduct: 'RIC',
-    patience: 50, waitColor: '#27ae60',
+    patience: 50, waitColor: '#27ae60', headStyle: 0
   },
 ];
 

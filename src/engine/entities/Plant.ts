@@ -3,14 +3,14 @@ import { Entity } from './Character';
 export class Plant extends Entity {
   public waterLevel: number = 80 + Math.random() * 20;
   public isWatered: boolean = true;
-  public type: 'flower' | 'bush' | 'tree' = 'flower';
+  public type: 'flower' | 'bush' | 'tree' | 'palm' = 'flower';
   public lastWatered: number = Date.now();
   public lastClickTime: number = 0;
   public scale: number = 1;
   public isInteractive: boolean = true;
   private wateredEffectTimer: number = 0;
 
-  constructor(x: number, y: number, type: 'flower' | 'bush' | 'tree' = 'flower', isInteractive: boolean = true) {
+  constructor(x: number, y: number, type: 'flower' | 'bush' | 'tree' | 'palm' = 'flower', isInteractive: boolean = true) {
     super(x, y);
     this.type = type;
     this.isInteractive = isInteractive;
@@ -62,6 +62,8 @@ export class Plant extends Entity {
       this.drawBush(ctx);
     } else if (this.type === 'tree') {
       this.drawTree(ctx);
+    } else if (this.type === 'palm') {
+      this.drawPalm(ctx);
     }
 
     // Happy particles when watered
@@ -150,5 +152,31 @@ export class Plant extends Entity {
     // Some highlights on leaves
     ctx.fillStyle = 'rgba(255,255,255,0.1)';
     ctx.beginPath(); ctx.arc(10, -50, 10, 0, Math.PI * 2); ctx.fill();
+  }
+
+  private drawPalm(ctx: CanvasRenderingContext2D) {
+    // Trunk (slanted)
+    ctx.fillStyle = '#795548';
+    ctx.beginPath();
+    ctx.moveTo(-5, 0);
+    ctx.quadraticCurveTo(-15, -40, -5, -80);
+    ctx.lineTo(5, -80);
+    ctx.quadraticCurveTo(-5, -40, 15, 0);
+    ctx.fill();
+
+    // Leaves (Fronds)
+    ctx.fillStyle = '#2e7d32';
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(-5, -80);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(20, -10, 45, 10);
+      ctx.quadraticCurveTo(20, 15, 0, 0);
+      ctx.fill();
+      ctx.restore();
+    }
   }
 }

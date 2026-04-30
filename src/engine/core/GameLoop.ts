@@ -5,7 +5,7 @@ import { TravelUI } from '../TravelUI';
 import type { GameState, CustomerProfile, AudiogramData, ScreenId } from '../../types';
 import { spawnCustomer, resetCustomerIds } from '../../data/customers';
 import { PRODUCTS } from '../../data/products';
-import { INVENTORY } from '../../data/inventory';
+import { INVENTORY, InventoryCategory } from '../../data/inventory';
 import { ShopRenderer } from '../ShopRenderer';
 import { AudioEngine } from './AudioEngine';
 import { HearingTestUI } from '../ui/HearingTestUI';
@@ -33,10 +33,11 @@ export class GameLoop {
   private consultationPhase: 'test' | 'recommend' | 'none' = 'none';
   private toastTimer = 0;
   private particleAnimId = 0;
-  private isSpawningEnabled = true;
-  private activeInventoryCategory: 'flowers' | 'plants' | 'hearing-aid-devices' = 'flowers';
+  private isSpawningEnabled = false;
+  private activeInventoryCategory: InventoryCategory = 'flowers';
   private inventoryStock: Record<string, number> = {};
   private selectedInventoryItemId: string | null = null;
+  private isMarketMode = false;
 
   constructor() {
     this.audio = new AudioEngine();
@@ -45,9 +46,9 @@ export class GameLoop {
   private showInteractionPopup(customer: CustomerProfile) {
     this.popupCustomer = customer;
     
-    // Pan and focus camera on customer
-    this.renderer.centerCameraOn(customer.id);
-    this.renderer.focusedCustomerId = customer.id;
+    // Pan and focus camera on customer (Disabled as per user request)
+    // this.renderer.centerCameraOn(customer.id);
+    // this.renderer.focusedCustomerId = customer.id;
     this.waitingUI.close();
     
     // Fill customer info
@@ -92,9 +93,19 @@ export class GameLoop {
     document.getElementById('char-more-menu')?.classList.add('hidden');
   }
 
-  private openInventory() {
+  private openInventory(marketMode = false) {
+    this.isMarketMode = marketMode;
     this.renderInventoryUI();
     const modal = document.getElementById('inventory-modal')!;
+    const title = modal.querySelector('h2')!;
+    if (this.isMarketMode) {
+      if (this.renderer.currentMap === 'cafe') title.textContent = 'Starbucks Cafe';
+      else if (this.renderer.currentMap === 'market') title.textContent = 'Teknik Market';
+      else title.textContent = 'Balık Ekmekçi';
+    } else {
+      title.textContent = 'Envanter';
+    }
+    
     modal.classList.remove('hidden');
     modal.classList.add('active');
   }
@@ -113,7 +124,44 @@ export class GameLoop {
     this.selectedInventoryItemId = itemId;
     (document.getElementById('inventory-item-popup-title') as HTMLElement).textContent = item.name;
     (document.getElementById('inventory-item-popup-stock') as HTMLElement).textContent =
-      `Stock: ${this.getSlotCount(item.id, item.stock)}`;
+      `Stok: ${this.getSlotCount(item.id, item.stock)}`;
+    const displayPrice = this.isMarketMode ? item.purchasePrice : item.unitPrice;
+    const priceLabel = this.isMarketMode ? 'Alış Fiyatı' : 'Satış Fiyatı';
+    (document.getElementById('inventory-item-popup-price') as HTMLElement).textContent =
+      `${priceLabel}: $${displayPrice}`;
+    
+    const sellBtn = document.getElementById('btn-inventory-sell')!;
+    const buyBtn = document.getElementById('btn-inventory-buy')!;
+    const buyEatBtn = document.getElementById('btn-inventory-buy-eat')!;
+    const consumeBtn = document.getElementById('btn-inventory-consume')!;
+    const moveBtn = document.getElementById('btn-inventory-move-shop')!;
+
+    // Logic for showing buttons
+    if (this.isMarketMode) {
+      buyBtn.classList.remove('hidden');
+      // Only show "Buy & Eat" for food items
+      if (item.category === 'food') {
+        buyEatBtn.classList.remove('hidden');
+      } else {
+        buyEatBtn.classList.add('hidden');
+      }
+      consumeBtn.classList.add('hidden');
+      sellBtn.classList.add('hidden');
+      moveBtn.classList.add('hidden');
+    } else {
+      buyBtn.classList.add('hidden');
+      buyEatBtn.classList.add('hidden');
+      sellBtn.classList.remove('hidden');
+      moveBtn.classList.toggle('hidden', item.category !== 'flowers');
+      
+      // Show consume button if it's food and we have stock in inventory
+      if (item.category === 'food' && this.getSlotCount(item.id, 0) > 0) {
+        consumeBtn.classList.remove('hidden');
+      } else {
+        consumeBtn.classList.add('hidden');
+      }
+    }
+
     (document.getElementById('inventory-item-popup') as HTMLElement).classList.remove('hidden');
   }
 
@@ -148,24 +196,24 @@ export class GameLoop {
     if (document.getElementById('inventory-modal')?.classList.contains('active')) {
       this.renderInventoryUI();
     }
-    this.toast(`Added to inventory: +1 ${plantType}`, 'success');
+    this.toast(`Envantere eklendi: +1 ${plantType}`, 'success');
   }
 
   private async moveFlowerToShop(itemId: string) {
     if (this.renderer.currentMap !== 'shop') {
-      this.toast('Flowers can only be placed in Shop room', 'warning');
+      this.toast('Çiçekler sadece Mağaza bölümüne yerleştirilebilir', 'warning');
       return;
     }
 
     const current = this.getSlotCount(itemId, 0);
     if (current <= 0) {
-      this.toast('No stock left in storage', 'warning');
+      this.toast('Depoda stok kalmadı', 'warning');
       return;
     }
 
     const placed = await this.renderer.placeFlowerFromStorage();
     if (!placed) {
-      this.toast('Could not place flower in room', 'error');
+      this.toast('Çiçek odaya yerleştirilemedi', 'error');
       return;
     }
 
@@ -173,7 +221,7 @@ export class GameLoop {
     await db.setVal('inventoryStock', this.inventoryStock);
     this.renderInventoryUI();
     this.openInventoryItemPopup(itemId);
-    this.toast('Flower moved from storage to room', 'success');
+    this.toast('Çiçek depodan odaya taşındı', 'success');
   }
 
   private async sellSelectedInventoryItem() {
@@ -183,7 +231,7 @@ export class GameLoop {
 
     const current = this.getSlotCount(item.id, item.stock);
     if (current <= 0) {
-      this.toast('No stock left to sell', 'warning');
+      this.toast('Satılacak stok kalmadı', 'warning');
       return;
     }
 
@@ -196,7 +244,75 @@ export class GameLoop {
     this.renderInventoryUI();
     this.openInventoryItemPopup(item.id);
     this.updateHUD();
-    this.toast(`Sold: ${item.name} +$${item.unitPrice}`, 'success');
+    this.toast(`Satıldı: ${item.name} +$${item.unitPrice}`, 'success');
+  }
+
+  private async buySelectedItem() {
+    if (!this.selectedInventoryItemId) return;
+    const item = INVENTORY.find((entry) => entry.id === this.selectedInventoryItemId);
+    if (!item) return;
+
+    const price = item.purchasePrice;
+    if (this.state.money < price) {
+      this.toast('Yeterli paranız yok!', 'error');
+      return;
+    }
+
+    const current = this.getSlotCount(item.id, item.stock);
+    this.inventoryStock[item.id] = current + 1;
+    await db.setVal('inventoryStock', this.inventoryStock);
+
+    this.state.money -= price;
+    await db.setVal('money', this.state.money);
+
+    this.renderInventoryUI();
+    this.openInventoryItemPopup(item.id);
+    this.updateHUD();
+    this.audio.playClick();
+    this.toast(`Envantere eklendi: ${item.name} -$${price}`, 'success');
+  }
+
+  private async buyAndConsumeSelectedItem() {
+    if (!this.selectedInventoryItemId) return;
+    const item = INVENTORY.find((entry) => entry.id === this.selectedInventoryItemId);
+    if (!item) return;
+
+    const price = item.purchasePrice;
+    if (this.state.money < price) {
+      this.toast('Yeterli paranız yok!', 'error');
+      return;
+    }
+
+    // Immediate consumption
+    this.renderer.player.eatEmoji = item.id === 'kahve' ? '☕' : '🥪';
+    this.renderer.player.eatTimer = 3.0;
+    this.closeInventory();
+
+    this.state.money -= price;
+    await db.setVal('money', this.state.money);
+
+    this.updateHUD();
+    this.audio.playClick();
+    this.toast(`${item.name} satın alındı ve afiyetle tüketildi! -$${price}`, 'success');
+  }
+
+  private async consumeSelectedItem() {
+    if (!this.selectedInventoryItemId) return;
+    const item = INVENTORY.find((entry) => entry.id === this.selectedInventoryItemId);
+    if (!item) return;
+
+    const current = this.getSlotCount(item.id, 0);
+    if (current <= 0) return;
+
+    this.inventoryStock[item.id] = current - 1;
+    await db.setVal('inventoryStock', this.inventoryStock);
+
+    this.renderer.player.eatEmoji = item.id === 'kahve' ? '☕' : '🥪';
+    this.renderer.player.eatTimer = 3.0;
+    this.closeInventory();
+    
+    this.audio.playClick();
+    this.toast(`${item.name} afiyetle tüketildi!`, 'success');
   }
 
   private async moveSelectedItemToShop() {
@@ -205,7 +321,7 @@ export class GameLoop {
     if (!item) return;
 
     if (item.category !== 'flowers') {
-      this.toast('Only flowers can be moved to shop for now', 'warning');
+      this.toast('Şimdilik sadece çiçekler mağazaya taşınabilir', 'warning');
       return;
     }
 
@@ -216,23 +332,41 @@ export class GameLoop {
 
   private renderInventoryUI() {
     const container = document.getElementById('inventory-content') as HTMLElement;
-    const sections: Array<{ title: string; category: 'flowers' | 'plants' | 'hearing-aid-devices' }> = [
-      { title: 'Flowers', category: 'flowers' },
-      { title: 'Plants', category: 'plants' },
-      { title: 'Hearing Aid Devices', category: 'hearing-aid-devices' },
+    const sections: Array<{ title: string; category: InventoryCategory }> = [
+      { title: 'Çiçekler', category: 'flowers' },
+      { title: 'Bitkiler', category: 'plants' },
+      { title: 'İşitme Cihazları', category: 'hearing-aid-devices' },
+      { title: 'Yiyecek', category: 'food' },
     ];
-    const activeSection = sections.find((s) => s.category === this.activeInventoryCategory) ?? sections[0];
-    const items = INVENTORY.filter((item) => item.category === activeSection.category);
-    const tabsHTML = sections.map((section) => `
+    
+    // In market mode, only show food or hearing aids depending on map
+    const filteredSections = this.isMarketMode 
+      ? sections.filter(s => {
+          if (this.renderer.currentMap === 'market') return s.category === 'hearing-aid-devices';
+          return s.category === 'food';
+        }) 
+      : sections;
+    const activeSection = filteredSections.find((s) => s.category === this.activeInventoryCategory) ?? filteredSections[0];
+    let items = INVENTORY.filter((item) => item.category === activeSection.category);
+    
+    // Filter food based on map in market mode
+    if (this.isMarketMode && activeSection.category === 'food') {
+      if (this.renderer.currentMap === 'cafe') {
+        items = items.filter(i => i.id === 'kahve');
+      } else if (this.renderer.currentMap === 'samandag') {
+        items = items.filter(i => i.id === 'food-fish-bread');
+      }
+    }
+    const tabsHTML = filteredSections.length > 1 ? filteredSections.map((section) => `
       <button class="inventory-tab ${section.category === activeSection.category ? 'active' : ''}" data-category="${section.category}">
         ${section.title}
       </button>
-    `).join('');
+    `).join('') : '';
     const itemsHTML = items.map((item) => {
       const isLowStock = item.stock <= item.reorderLevel;
       return `
         <div class="inventory-slot ${isLowStock ? 'low' : ''}" data-item-id="${item.id}" data-item-category="${item.category}" title="${item.name}">
-          <div class="inventory-slot-image">${item.image}</div>
+          <div class="inventory-slot-image"><i data-lucide="${item.image}"></i></div>
           <div class="inventory-slot-count">${this.getSlotCount(item.id, item.stock)}</div>
           <div class="inventory-slot-name">${item.name}</div>
         </div>
@@ -242,13 +376,13 @@ export class GameLoop {
     container.innerHTML = `
       <div class="inventory-tabs">${tabsHTML}</div>
       <div class="inventory-slots">
-        ${itemsHTML || '<div class="inventory-item-meta">No items</div>'}
+        ${itemsHTML || '<div class="inventory-item-meta">Öğe yok</div>'}
       </div>
     `;
 
     container.querySelectorAll<HTMLButtonElement>('.inventory-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
-        const category = tab.dataset.category as 'flowers' | 'plants' | 'hearing-aid-devices' | undefined;
+        const category = tab.dataset.category as 'flowers' | 'plants' | 'hearing-aid-devices' | 'food' | undefined;
         if (!category || category === this.activeInventoryCategory) return;
         this.activeInventoryCategory = category;
         this.renderInventoryUI();
@@ -262,6 +396,8 @@ export class GameLoop {
         this.openInventoryItemPopup(itemId);
       });
     });
+
+    (window as any).lucide?.createIcons();
   }
 
   init() {
@@ -300,6 +436,20 @@ export class GameLoop {
         this.hideInteractionPopup(false);
       }
     });
+    document.getElementById('btn-char-focus')!.addEventListener('click', () => {
+      if (this.popupCustomer) {
+        this.renderer.centerCameraOn(this.popupCustomer.id);
+        this.renderer.focusedCustomerId = this.popupCustomer.id;
+        this.renderer.isCameraLocked = true;
+        const lockBtn = document.getElementById('btn-lock-camera')!;
+        if (lockBtn) {
+          lockBtn.classList.add('active');
+          lockBtn.innerHTML = '<i data-lucide="lock"></i>';
+          (window as any).lucide?.createIcons();
+        }
+        this.hideInteractionPopup(false);
+      }
+    });
     document.getElementById('btn-char-remove')!.addEventListener('click', () => {
       if (this.popupCustomer) {
         this.renderer.removeCustomer(this.popupCustomer.id, 'leaving');
@@ -319,6 +469,15 @@ export class GameLoop {
     });
     document.getElementById('btn-inventory-sell')!.addEventListener('click', () => {
       void this.sellSelectedInventoryItem();
+    });
+    document.getElementById('btn-inventory-buy')!.addEventListener('click', () => {
+      void this.buySelectedItem();
+    });
+    document.getElementById('btn-inventory-buy-eat')!.addEventListener('click', () => {
+      void this.buyAndConsumeSelectedItem();
+    });
+    document.getElementById('btn-inventory-consume')!.addEventListener('click', () => {
+      void this.consumeSelectedItem();
     });
     document.getElementById('btn-inventory-move-shop')!.addEventListener('click', () => {
       void this.moveSelectedItemToShop();
@@ -344,20 +503,19 @@ export class GameLoop {
                 this.travelUI = new TravelUI(
                   async (dest) => {
         console.log("Traveling to:", dest);
-        if (dest === 'cafe' || dest === 'shop') {
+        if (dest === 'cafe' || dest === 'shop' || dest === 'samandag' || dest === 'market') {
           this.renderer.startTravelAnimation(async () => {
-            await this.renderer.setMap(dest as 'shop' | 'cafe');
+            await this.renderer.setMap(dest as any);
             await db.setVal('currentMap', dest);
-            this.renderer.player.alpha = 1; 
-            
-            const btnSpawn = document.getElementById('btn-toggle-spawn')!;
-            if (dest === 'shop') {
-              btnSpawn.style.display = 'flex';
-            } else {
-              btnSpawn.style.display = 'none';
-            }
+            this.renderer.player.alpha = 1;
+            this.updateMapContextUI();
 
-            this.toast(dest === 'cafe' ? "Kafeye gelindi! ☕" : "Mağazaya dönüldü! 🏥");
+            let msg = "Yola çıkıldı!";
+            if (dest === 'cafe') msg = "Kafeye gelindi! ☕";
+            else if (dest === 'shop') msg = "Mağazaya dönüldü! 🏥";
+            else if (dest === 'samandag') msg = "Samandağ Sahili'ne gelindi! 🏖️";
+            else if (dest === 'market') msg = "Teknik Market'e gelindi! ⚙️";
+            this.toast(msg);
           });
         }
       },
@@ -369,7 +527,16 @@ export class GameLoop {
     this.renderer.onCarClick(() => {
       this.audio.playClick();
       this.renderer.player.alpha = 0; // Hide doctor (get in car)
-      this.travelUI.show();
+      this.travelUI.show(this.renderer.currentMap);
+    });
+    this.renderer.onBuffetClickEvent(() => {
+      this.audio.playClick();
+      if (this.renderer.currentMap === 'market') {
+        this.activeInventoryCategory = 'hearing-aid-devices';
+      } else {
+        this.activeInventoryCategory = 'food';
+      }
+      this.openInventory(true); // Open in market mode
     });
     this.consultation = new ConsultationUI(this.audio);
     this.consultation.onSale(result => this.onSaleComplete(result));
@@ -392,6 +559,27 @@ export class GameLoop {
     // Pause
     document.getElementById('btn-pause')!.addEventListener('click', () => this.pause());
     document.getElementById('btn-resume')!.addEventListener('click', () => this.resume());
+    
+    // Initial Audio State
+    const savedMute = localStorage.getItem('hcs_muted') === 'true';
+    this.audio.setMuted(savedMute);
+    const audioBtn = document.getElementById('btn-toggle-audio')!;
+    if (audioBtn) {
+      audioBtn.innerHTML = savedMute 
+        ? '<i data-lucide="volume-x"></i> Ses Kapalı' 
+        : '<i data-lucide="volume-2"></i> Ses Açık';
+    }
+
+    document.getElementById('btn-toggle-audio')!.addEventListener('click', () => {
+      const isMuted = !this.audio.isMuted;
+      this.audio.setMuted(isMuted);
+      localStorage.setItem('hcs_muted', String(isMuted));
+      const btn = document.getElementById('btn-toggle-audio')!;
+      btn.innerHTML = isMuted 
+        ? '<i data-lucide="volume-x"></i> Ses Kapalı' 
+        : '<i data-lucide="volume-2"></i> Ses Açık';
+      (window as any).lucide?.createIcons();
+    });
     document.getElementById('btn-pause-quit')!.addEventListener('click', () => { this.stop(); this.showScreen('screen-title'); });
 
     // Fullscreen (HUD + Alt Buttons)
@@ -433,28 +621,115 @@ export class GameLoop {
     lockBtn.addEventListener('click', () => {
       this.renderer.isCameraLocked = !this.renderer.isCameraLocked;
       lockBtn.classList.toggle('active', this.renderer.isCameraLocked);
-      lockBtn.innerHTML = this.renderer.isCameraLocked ? '🔒' : '🔓';
+      lockBtn.innerHTML = this.renderer.isCameraLocked ? '<i data-lucide="lock"></i>' : '<i data-lucide="lock-open"></i>';
+      (window as any).lucide?.createIcons();
     });
     this.renderer.onUnlockCamera(() => {
       lockBtn.classList.remove('active');
-      lockBtn.innerHTML = '🔓';
+      lockBtn.innerHTML = '<i data-lucide="lock-open"></i>';
+      (window as any).lucide?.createIcons();
+    });
+
+    // Reset Database
+    document.getElementById('btn-reset-db')!.addEventListener('click', () => {
+      this.showConfirm(
+        'Tüm Verileri Sil?', 
+        'Tüm oyun ilerlemeniz ve birikmiş paranız kalıcı olarak silinecektir. Bu işlem geri alınamaz!',
+        () => {
+          void db.clearAll().then(() => {
+            window.location.reload();
+          });
+        }
+      );
+    });
+
+    // Backup: Export
+    document.getElementById('btn-export-save')!.addEventListener('click', async () => {
+      const json = await db.exportData();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SonaIsitme_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.toast('Yedek başarıyla indirildi', 'success');
+    });
+
+    // Backup: Import
+    const importInput = document.getElementById('input-import-save') as HTMLInputElement;
+    document.getElementById('btn-import-save')!.addEventListener('click', () => {
+      importInput.click();
+    });
+
+    importInput.addEventListener('change', async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const json = event.target?.result as string;
+        const ok = await db.importData(json);
+        if (ok) {
+          this.toast('Yedek başarıyla geri yüklendi! Sayfa yenileniyor...', 'success');
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          this.toast('Yedek geri yüklenemedi! Dosya geçersiz olabilir.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      importInput.value = ''; // Reset
     });
 
     // Title screen
     this.loadHighScores();
   }
 
-      async startGame() {
+  private showConfirm(title: string, msg: string, onYes: () => void) {
+    const modal = document.getElementById('confirm-modal')!;
+    const titleEl = document.getElementById('confirm-title')!;
+    const msgEl = document.getElementById('confirm-msg')!;
+    const yesBtn = document.getElementById('btn-confirm-yes')!;
+    const noBtn = document.getElementById('btn-confirm-no')!;
+
+    titleEl.textContent = title;
+    msgEl.textContent = msg;
+    modal.classList.add('active'); // Use active instead of hidden
+
+    const handleYes = () => {
+      onYes();
+      modal.classList.remove('active');
+      cleanup();
+    };
+    const handleNo = () => {
+      modal.classList.remove('active');
+      cleanup();
+    };
+    const cleanup = () => {
+      yesBtn.removeEventListener('click', handleYes);
+      noBtn.removeEventListener('click', handleNo);
+    };
+
+    yesBtn.addEventListener('click', handleYes);
+    noBtn.addEventListener('click', handleNo);
+  }
+
+  async startGame() {
     resetCustomerIds();
     
     const savedMoney = await db.getVal('money', 500);
+    const savedTotalServed = await db.getVal('totalServed', 0);
     const savedMap = await db.getVal('currentMap', 'shop');
     await this.loadInventoryStock();
 
+    this.isSpawningEnabled = false;
+    const btnSpawn = document.getElementById('btn-toggle-spawn')!;
+    btnSpawn.classList.remove('active');
+
     this.state = {
       day: 1, money: savedMoney, score: 0,
-      totalServed: 0, dayEarnings: 0, dayServed: 0, dayPerfect: 0,
-      daySales: [], unlockedProducts: new Set(['CIC', 'RIC', 'ITE', 'BTE']),
+      totalServed: savedTotalServed, dayEarnings: 0, dayServed: 0, dayPerfect: 0,
+      daySales: [],
       isPaused: false, isRunning: true,
       dayDuration: DAY_DURATION, dayTimeLeft: DAY_DURATION,
       highScore: this.getHighScore(), bestEarnings: this.getBestEarnings(),
@@ -467,6 +742,7 @@ export class GameLoop {
     this.consultationPhase = 'none';
     this.closeConsultation();
     this.updateHUD();
+    this.updateMapContextUI();
     this.showScreen('screen-game');
     this.renderer.resize();          // sync resize — canvas is visible now
     this.lastTime = performance.now();
@@ -562,6 +838,17 @@ export class GameLoop {
     this.renderer.setConsultationOpen(true);
     this.consultationPhase = 'approaching';
     this.waitingUI.close();
+
+    // Lock camera on customer
+    this.renderer.centerCameraOn(customer.id);
+    this.renderer.focusedCustomerId = customer.id;
+    this.renderer.isCameraLocked = true;
+    const lockBtn = document.getElementById('btn-lock-camera')!;
+    if (lockBtn) {
+      lockBtn.classList.add('active');
+      lockBtn.innerHTML = '<i data-lucide="lock"></i>';
+      (window as any).lucide?.createIcons();
+    }
   }
 
   private startActualConsultationUI(customer: CustomerProfile) {
@@ -596,7 +883,7 @@ export class GameLoop {
     this.consultationPhase = 'recommend';
     document.getElementById('step-1')!.classList.remove('active');
     document.getElementById('step-2')!.classList.add('active');
-    this.consultation.show(this.activeCustomer, data);
+    this.consultation.show(this.activeCustomer, data, this.inventoryStock);
   }
 
   private onSaleComplete(result: { productId: string; isPerfect: boolean; bonus: number; price: number }) {
@@ -608,17 +895,25 @@ export class GameLoop {
     this.state.dayEarnings += total;
     this.state.dayServed++;
     this.state.totalServed++;
+    void db.setVal('totalServed', this.state.totalServed);
     if (result.isPerfect) this.state.dayPerfect++;
 
     const scoreGain = result.isPerfect ? 100 : 50;
     this.state.score += scoreGain;
 
+    // Deduct stock
+    const currentStock = this.inventoryStock[result.productId] || 0;
+    if (currentStock > 0) {
+      this.inventoryStock[result.productId] = currentStock - 1;
+      void db.setVal('inventoryStock', this.inventoryStock);
+    }
+
     this.renderer.removeCustomer(customer.id, 'served');
     this.closeConsultation();
 
     const msg = result.isPerfect
-      ? `⭐ Perfect! +$${total.toLocaleString()} earned`
-      : `💰 Sale closed! +$${total.toLocaleString()} earned`;
+      ? `⭐ Mükemmel! +$${total.toLocaleString()} kazanıldı`
+      : `💰 Satış yapıldı! +$${total.toLocaleString()} kazanıldı`;
     this.toast(msg, result.isPerfect ? 'success' : 'info');
 
     this.audio.playCoin();
@@ -631,16 +926,8 @@ export class GameLoop {
     cancelAnimationFrame(this.animId);
     this.closeConsultation();
 
-    // Check for new unlocks
+    // Check for new unlocks (Removed)
     let unlockMsg = '';
-    if (this.state.day >= 3 && !this.state.unlockedProducts.has('BCH')) {
-      this.state.unlockedProducts.add('BCH');
-      unlockMsg = '🔴 Bone Conduction Headband unlocked!';
-    }
-    if (this.state.day >= 5 && !this.state.unlockedProducts.has('SMART')) {
-      this.state.unlockedProducts.add('SMART');
-      unlockMsg = '🌟 Premium Smart hearing aid unlocked!';
-    }
 
     // Grade
     const perfect = this.state.dayPerfect;
@@ -704,7 +991,7 @@ export class GameLoop {
   private pause() {
     this.state.isPaused = true;
     document.getElementById('screen-pause')!.style.display = 'flex';
-    document.getElementById('screen-pause')!.style.zIndex = '500';
+    document.getElementById('screen-pause')!.style.zIndex = '999999';
   }
 
   private resume() {
@@ -716,9 +1003,10 @@ export class GameLoop {
   // ── HUD ────────────────────────────────────────────────────────────────────
   private updateHUD() {
     (document.getElementById('hud-money-val') as HTMLElement).textContent = this.state.money.toLocaleString();
-    (document.getElementById('hud-score-val') as HTMLElement).textContent = String(this.state.score);
+    const scoreVal = document.getElementById('hud-score-val');
+    if (scoreVal) scoreVal.textContent = String(this.state.score);
+    (document.getElementById('hud-total-served-val') as HTMLElement).textContent = String(this.state.totalServed);
     (document.getElementById('hud-day-val') as HTMLElement).textContent = String(this.state.day);
-    (document.getElementById('hud-served') as HTMLElement).textContent = String(this.state.dayServed);
   }
 
   // ── Toast ──────────────────────────────────────────────────────────────────
@@ -728,6 +1016,15 @@ export class GameLoop {
     el.className = type;
     el.classList.remove('hidden');
     this.toastTimer = 3;
+  }
+
+  private updateMapContextUI() {
+    const isShop = this.renderer.currentMap === 'shop';
+    const btnSpawn = document.getElementById('btn-toggle-spawn');
+    const waitingPanel = document.getElementById('waiting-list-panel');
+    
+    if (btnSpawn) btnSpawn.classList.toggle('hidden', !isShop);
+    if (waitingPanel) waitingPanel.classList.toggle('hidden', !isShop);
   }
 
   // ── Screens ────────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private current: { osc: OscillatorNode; gain: GainNode } | null = null;
+  public isMuted: boolean = false;
 
   private getCtx(): AudioContext {
     if (!this.ctx) {
@@ -14,8 +15,14 @@ export class AudioEngine {
     return this.ctx;
   }
 
+  setMuted(mute: boolean) {
+    this.isMuted = mute;
+    if (mute) this.stopTone();
+  }
+
   /** Play a sine-wave tone at the given frequency (Hz). Duration in seconds. */
   playTone(freq: number, duration = 1.5): void {
+    if (this.isMuted) return;
     this.stopTone();
     const ctx = this.getCtx();
     const osc = ctx.createOscillator();
@@ -40,6 +47,7 @@ export class AudioEngine {
 
   /** Play a short UI success chime */
   playSuccess(): void {
+    if (this.isMuted) return;
     const ctx = this.getCtx();
     const freqs = [523.25, 659.25, 783.99]; // C5 E5 G5
     freqs.forEach((f, i) => {
@@ -59,6 +67,7 @@ export class AudioEngine {
 
   /** Play a short UI error buzz */
   playError(): void {
+    if (this.isMuted) return;
     const ctx = this.getCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -75,6 +84,7 @@ export class AudioEngine {
 
   /** Play coin jingle */
   playCoin(): void {
+    if (this.isMuted) return;
     const ctx = this.getCtx();
     [880, 1320].forEach((f, i) => {
       const osc = ctx.createOscillator();
@@ -92,6 +102,7 @@ export class AudioEngine {
   }
 
   playClick(): void {
+    if (this.isMuted) return;
     const ctx = this.getCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();

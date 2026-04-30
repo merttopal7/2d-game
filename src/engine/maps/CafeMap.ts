@@ -45,34 +45,150 @@ export class CafeMap extends BaseMap {
       }
     }
 
-    // Interior Details (Counter, Tables)
-    ctx.fillStyle = '#2c1b0e';
-    this.roundRect(ctx, 100, 100, 600, 80, 10);
-    ctx.fill();
-
+    // Interior Details (Seating Area)
     const tables = [
-      {x: 1000, y: 250}, {x: 1400, y: 250}, {x: 1800, y: 250},
-      {x: 1000, y: 450}, {x: 1400, y: 450}, {x: 1800, y: 450}
+      {x: 1000, y: 200}, {x: 1450, y: 200}, {x: 1900, y: 200},
+      {x: 1000, y: 430}, {x: 1450, y: 430}, {x: 1900, y: 430}
     ];
     tables.forEach(t => {
+      // Chairs (4 around each table)
+      const chairDistance = 75;
+      const chairRadius = 22;
+      const chairPositions = [
+        {dx: -chairDistance, dy: 0},
+        {dx: chairDistance, dy: 0},
+        {dx: 0, dy: -chairDistance},
+        {dx: 0, dy: chairDistance}
+      ];
+      
+      chairPositions.forEach(pos => {
+        ctx.fillStyle = '#3e2723'; // Chair frame/legs
+        ctx.beginPath(); ctx.arc(t.x + pos.dx, t.y + pos.dy, chairRadius + 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d4037'; // Chair seat
+        ctx.beginPath(); ctx.arc(t.x + pos.dx, t.y + pos.dy, chairRadius, 0, Math.PI * 2); ctx.fill();
+      });
+
+      // Larger Table
       ctx.fillStyle = '#5d4037';
-      ctx.beginPath(); ctx.arc(t.x, t.y, 60, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(t.x, t.y, 70, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#3e2723';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      
+      // Table detail
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.beginPath(); ctx.arc(t.x, t.y, 60, 0, Math.PI * 2); ctx.stroke();
     });
 
-    // Exterior
-    ctx.fillStyle = '#34495e';
-    ctx.fillRect(0, sidewalkY, W, roadY - sidewalkY);
-    ctx.fillStyle = '#1c1c1c';
-    ctx.fillRect(0, roadY, W, gardenY - roadY);
-    ctx.fillStyle = '#1b5e20';
-    ctx.fillRect(0, gardenY, W, H - gardenY);
+    // ─── RECTANGULAR MODERN BUFFET ───
+    const bx = 100, by = 60, bw = 600, bh = 200;
+    
+    // 1. Back Wall & Shelves
+    ctx.fillStyle = '#2c1b0e';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = '#3e2723';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(bx, by, bw, bh);
+    
+    // Shelves with items
+    for(let sy = by + 50; sy < by + bh - 40; sy += 60) {
+      ctx.fillStyle = '#3e2723';
+      ctx.fillRect(bx + 10, sy, bw - 20, 8);
+      // Small decorative boxes on shelves
+      ctx.fillStyle = '#8d6e63';
+      ctx.fillRect(bx + 40, sy - 20, 30, 20);
+      ctx.fillRect(bx + 120, sy - 20, 25, 20);
+    }
 
-    this.renderer.cars.forEach((car: any) => car.draw(ctx));
+    // 2. The Cashier (Full Character Style)
+    const cx = bx + 180, cy = by + bh - 80;
+    ctx.save();
+    ctx.translate(cx, cy);
+    
+    // Body (Character Style)
+    ctx.fillStyle = '#2c3e50'; // Apron/Uniform
+    ctx.beginPath();
+    ctx.moveTo(-22, 25);
+    ctx.bezierCurveTo(-25, -25, 25, -25, 22, 25);
+    ctx.fill();
+    // Arms
+    ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 12; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-15, 0); ctx.lineTo(-25, 20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(25, 20); ctx.stroke();
+    
+    // Head (Matching Ayşe - Case 7)
+    ctx.save();
+    ctx.translate(0, -35);
+    ctx.scale(0.55, 0.55);
+    
+    // Ayşe's Hair (Black curly voluminous)
+    ctx.fillStyle = '#1a1008';
+    ctx.beginPath(); ctx.ellipse(0, -24, 31, 24, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-27, -4, 10, 24, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(27, -4, 10, 24, 0, 0, Math.PI * 2); ctx.fill();
 
+    // Face
+    ctx.fillStyle = '#fce2c4';
+    ctx.beginPath(); ctx.ellipse(0, 0, 24, 28, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Eyes & Face details (Ayşe style)
+    const drawEye = (ex: number, ey: number, color: string) => {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(ex, ey, 6, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(ex, ey, 2.5, 0, Math.PI * 2); ctx.fill();
+    };
+    drawEye(-9, -2, '#1a0a00');
+    drawEye(9, -2, '#1a0a00');
+    
+    // Lips
+    ctx.fillStyle = 'rgba(210,90,90,0.62)';
+    ctx.beginPath(); ctx.ellipse(0, 16, 7.5, 2.8, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Chef Hat (Keep it on top of Ayşe's hair)
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 40px Outfit';
+    ctx.beginPath(); ctx.roundRect(-22, -58, 44, 20, 4); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, -60, 26, 16, 0, 0, Math.PI * 2); ctx.fill();
+    
+    ctx.restore();
+    ctx.restore();
+
+    // 3. Rectangular Counter
+    ctx.fillStyle = '#5d4037';
+    ctx.fillRect(bx - 20, by + bh - 40, bw + 40, 60);
+    ctx.strokeStyle = '#3e2723';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(bx - 20, by + bh - 40, bw + 40, 60);
+    
+    // 4. Coffee Cups on Top
+    const cupX = bx + bw - 150;
+    const cupY = by + bh - 45;
+    for(let i=0; i<3; i++) {
+      ctx.save();
+      ctx.translate(cupX + i*40, cupY);
+      // Cup shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.beginPath(); ctx.ellipse(0, 5, 12, 4, 0, 0, Math.PI*2); ctx.fill();
+      // Cup body
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.moveTo(-10, -18); ctx.lineTo(10, -18); ctx.lineTo(8, 0); ctx.lineTo(-8, 0); ctx.closePath(); ctx.fill();
+      // Sleeve (brown)
+      ctx.fillStyle = '#8d6e63';
+      ctx.fillRect(-9, -12, 18, 8);
+      // Lid
+      ctx.fillStyle = '#333';
+      ctx.fillRect(-11, -20, 22, 4);
+      ctx.restore();
+    }
+
+    // 5. Signage
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 24px Outfit';
     ctx.textAlign = 'center';
-    ctx.fillText('☕ STARBUCKS CAFE', 400, 160);
+    ctx.fillText('STARBUCKS CAFE', bx + bw/2, by + 30);
+
+    // Exterior (Sidewalk, Road, Garden, Cars)
+    this.drawCommonBackground(ctx, W, H);
   }
 
   drawMiniMap(ctx: CanvasRenderingContext2D, mmX: number, mmY: number, mmW: number, mmH: number, scale: number) {
@@ -88,7 +204,7 @@ export class CafeMap extends BaseMap {
     ctx.fillStyle = '#2c1b0e';
     ctx.fillRect(mmX, mmY, mmW, 560 * scale);
 
-    // Tables in cafe
+    // Interior Details
     const tables = [
       {x: 1000, y: 250}, {x: 1400, y: 250}, {x: 1800, y: 250},
       {x: 1000, y: 450}, {x: 1400, y: 450}, {x: 1800, y: 450}
@@ -100,31 +216,22 @@ export class CafeMap extends BaseMap {
       ctx.fill();
     });
 
-    // Counter area
-    ctx.fillStyle = 'rgba(139, 90, 43, 0.5)';
-    ctx.fillRect(mmX + 2, mmY + 4, mmW * 0.25, 8 * scale);
+    // Counter area on minimap
+    ctx.fillStyle = '#8d6e63';
+    ctx.fillRect(mmX + 100 * scale, mmY + 80 * scale, 600 * scale, 140 * scale);
+    
+    // Interactive dot
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath();
+    ctx.arc(mmX + 400 * scale, mmY + 150 * scale, 4, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Sidewalk (grey strip)
-    ctx.fillStyle = '#4a5568';
-    ctx.fillRect(mmX, mmY + 560 * scale, mmW, 80 * scale);
-
-    // Road (dark asphalt)
-    ctx.fillStyle = '#1a202c';
-    ctx.fillRect(mmX, mmY + 640 * scale, mmW, 100 * scale);
-    // Road lane dashes
-    ctx.fillStyle = '#f6e05e';
-    for (let lx = mmX + 10; lx < mmX + mmW - 10; lx += 14 * scale + 6) {
-      ctx.fillRect(lx, mmY + 690 * scale, 10 * scale, 2 * scale);
-    }
-
-    // Garden / grass strip
-    ctx.fillStyle = '#276742';
-    ctx.fillRect(mmX, mmY + 740 * scale, mmW, (this.renderer.MAP_H - 740) * scale);
-    // Garden texture dots
-    ctx.fillStyle = '#38a169';
-    for (let gx = mmX + 4; gx < mmX + mmW - 4; gx += 8 * scale) {
-      ctx.fillRect(gx, mmY + 760 * scale, 3 * scale, 3 * scale);
-    }
+    this.drawCommonMiniMap(ctx, mmX, mmY, mmW, mmH, scale);
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 10px Outfit';
+    ctx.textAlign = 'left';
+    ctx.fillText('KAFE', mmX + 6, mmY + 12);
 
     ctx.restore();
 

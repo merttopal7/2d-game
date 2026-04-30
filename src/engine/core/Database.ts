@@ -45,6 +45,34 @@ export class ShopDatabase extends Dexie {
     const item = await this.gameState.where('key').equals(key).first();
     return item ? item.value : defaultValue;
   }
+
+  async exportData() {
+    const gameState = await this.gameState.toArray();
+    const plants = await this.plants.toArray();
+    return JSON.stringify({ gameState, plants, timestamp: Date.now(), version: 2 });
+  }
+
+  async importData(jsonString: string) {
+    try {
+      const data = JSON.parse(jsonString);
+      if (!data.gameState || !data.plants) throw new Error("Geçersiz yedek dosyası");
+      
+      await this.transaction('rw', this.gameState, this.plants, async () => {
+        await this.gameState.clear();
+        await this.plants.clear();
+        // Remove IDs to avoid conflicts and let auto-increment handle it
+        const cleanGS = data.gameState.map((i: any) => { const {id, ...rest} = i; return rest; });
+        const cleanPlants = data.plants.map((i: any) => { const {id, ...rest} = i; return rest; });
+        
+        await this.gameState.bulkAdd(cleanGS);
+        await this.plants.bulkAdd(cleanPlants);
+      });
+      return true;
+    } catch (e) {
+      console.error("Backup Import Error:", e);
+      return false;
+    }
+  }
 }
 
 export const db = new ShopDatabase();
