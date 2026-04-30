@@ -689,11 +689,13 @@ export class GameLoop {
     const confirmBtn = document.getElementById('btn-char-select-confirm') as HTMLButtonElement;
     const nameInput = document.getElementById('input-char-name') as HTMLInputElement;
 
-    confirmBtn.addEventListener('click', () => this.confirmCharSelection());
-    
-    nameInput.addEventListener('input', () => {
-      confirmBtn.disabled = !nameInput.value.trim() || this.selectedHeadStyle === null;
-    });
+    if (confirmBtn && nameInput) {
+      confirmBtn.addEventListener('click', () => this.confirmCharSelection());
+      
+      nameInput.addEventListener('input', () => {
+        confirmBtn.disabled = !nameInput.value.trim() || this.selectedHeadStyle === null;
+      });
+    }
   }
 
   private openCharSelection() {
