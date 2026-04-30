@@ -686,7 +686,14 @@ export class GameLoop {
     this.loadHighScores();
 
     // Char select confirm
-    document.getElementById('btn-char-select-confirm')!.addEventListener('click', () => this.confirmCharSelection());
+    const confirmBtn = document.getElementById('btn-char-select-confirm') as HTMLButtonElement;
+    const nameInput = document.getElementById('input-char-name') as HTMLInputElement;
+
+    confirmBtn.addEventListener('click', () => this.confirmCharSelection());
+    
+    nameInput.addEventListener('input', () => {
+      confirmBtn.disabled = !nameInput.value.trim() || this.selectedHeadStyle === null;
+    });
   }
 
   private openCharSelection() {
@@ -723,7 +730,8 @@ export class GameLoop {
         grid.querySelectorAll('.char-option').forEach(el => el.classList.remove('selected'));
         opt.classList.add('selected');
         this.selectedHeadStyle = i;
-        confirmBtn.disabled = false;
+        const nameInput = document.getElementById('input-char-name') as HTMLInputElement;
+        confirmBtn.disabled = !nameInput.value.trim();
         this.audio.playClick();
       });
       
@@ -732,9 +740,16 @@ export class GameLoop {
   }
 
   private async confirmCharSelection() {
-    if (this.selectedHeadStyle === null) return;
+    const nameInput = document.getElementById('input-char-name') as HTMLInputElement;
+    const name = nameInput.value.trim();
+    if (this.selectedHeadStyle === null || !name) return;
+    
     await db.setVal('playerHead', this.selectedHeadStyle);
+    await db.setVal('playerName', name);
+    
     this.renderer.player.headStyle = this.selectedHeadStyle;
+    this.renderer.player.name = name;
+    
     this.audio.playClick();
     this.startGame(); // Re-call startGame to proceed
   }
@@ -773,11 +788,14 @@ export class GameLoop {
     
     // Check for character selection first
     const savedHead = await db.getVal('playerHead', null);
-    if (savedHead === null) {
+    const savedName = await db.getVal('playerName', null);
+    
+    if (savedHead === null || savedName === null) {
       this.openCharSelection();
       return;
     }
     this.renderer.player.headStyle = savedHead;
+    this.renderer.player.name = savedName;
     
     const savedMoney = await db.getVal('money', 500);
     const savedTotalServed = await db.getVal('totalServed', 0);

@@ -148,7 +148,7 @@
           <div class="char-actions-wrapper">
             <button id="btn-char-more" class="btn-secondary" title="Daha Fazla"><i data-lucide="more-horizontal"></i></button>
             <div id="char-more-menu" class="dropdown-menu hidden">
-              <button id="btn-char-doctor-follow" class="dropdown-item"><i data-lucide="user"></i> Takip Et (Doktor)</button>
+              <button id="btn-char-doctor-follow" class="dropdown-item"><i data-lucide="user"></i> Takip Et</button>
               <button id="btn-char-customer-follow" class="dropdown-item"><i data-lucide="user"></i> Peşinden Gelsin</button>
               <button id="btn-char-focus" class="dropdown-item"><i data-lucide="search"></i> Müşteriyi Gör</button>
               <button id="btn-char-remove" class="dropdown-item" style="color: #e74c3c;"><i data-lucide="log-out"></i> Ayrılmasını İste</button>
@@ -321,8 +321,14 @@
   <!-- ── CHARACTER SELECTION ── -->
   <div id="screen-char-select" class="screen">
     <div class="modal-card" style="max-width: 600px;">
-      <h2><i data-lucide="user"></i> Karakterini Seç</h2>
-      <p style="color:var(--clr-muted)">Doktorunun görünümüne karar ver!</p>
+      <h2><i data-lucide="user"></i> Odyoloğunuzu Seçin</h2>
+      <p style="color:var(--clr-muted)">Odyoloğunuzun görünümüne ve ismine karar ver!</p>
+      
+      <div class="input-group" style="width: 100%; margin-top: 10px;">
+        <label for="input-char-name" style="display: block; font-size: 14px; color: var(--clr-muted); margin-bottom: 8px;">Odyolog İsmi</label>
+        <input type="text" id="input-char-name" placeholder="İsminizi girin..." maxlength="12" style="width: 100%; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--clr-border); color: #fff; font-family: inherit; font-size: 16px;">
+      </div>
+
       <div id="char-options-grid">
         <!-- Rendered via JS -->
       </div>

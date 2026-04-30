@@ -527,10 +527,12 @@ export class Player extends Character {
   public eatTimer: number = 0;
   public eatEmoji: string = '🥪';
   public headStyle: number = 0;
+  public name: string = 'DOKTOR';
 
-  constructor(x: number, y: number, headStyle: number = 0) {
+  constructor(x: number, y: number, headStyle: number = 0, name: string = 'DOKTOR') {
     super(x, y);
     this.headStyle = headStyle;
+    this.name = name;
   }
 
   update(dt: number) {
@@ -618,7 +620,7 @@ export class Player extends Character {
     ctx.fillRect(-22, 6, 44, 14);
     ctx.fillStyle = '#e74c3c';
     ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText('DOKTOR', 0, 16);
+    ctx.fillText(this.name.toUpperCase(), 0, 16);
 
     ctx.restore();
   }
