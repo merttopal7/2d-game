@@ -1320,3 +1320,71 @@ html, body {
   border-top: 10px solid rgba(25, 32, 45, 0.85);
   margin-top: -1px;
 }
+/* =========================================================
+   CHARACTER SELECTION
+   ========================================================= */
+#char-select-layout {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  margin-top: 15px;
+}
+#char-select-left {
+  flex: 1;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+#char-select-right {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  justify-content: center;
+}
+#char-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+.char-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid var(--clr-border);
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.2s;
+}
+.char-option:hover {
+  border-color: var(--clr-teal);
+  background: rgba(0, 201, 167, 0.1);
+}
+.char-option.selected {
+  border-color: var(--clr-teal);
+  background: rgba(0, 201, 167, 0.2);
+  box-shadow: 0 0 15px rgba(0, 201, 167, 0.4);
+}
+.char-option canvas {
+  width: 50px;
+  height: 50px;
+}
+@media (max-width: 600px) {
+  #char-select-layout {
+    flex-direction: row; /* Stay side by side as requested */
+    gap: 12px;
+  }
+  #char-select-right {
+    flex: 0 0 160px;
+  }
+  #char-options-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .modal-card {
+    padding: 15px;
+    width: 95%;
+  }
+}
