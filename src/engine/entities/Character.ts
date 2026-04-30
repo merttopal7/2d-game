@@ -620,7 +620,9 @@ export class Player extends Character {
     ctx.fillRect(-22, 6, 44, 14);
     ctx.fillStyle = '#e74c3c';
     ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText(this.name.toUpperCase(), 0, 16);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.name.toUpperCase(), 0, 13);
 
     ctx.restore();
   }
@@ -718,7 +720,9 @@ export class Customer extends Character {
     ctx.fillRect(-22, 6, 44, 14);
     ctx.fillStyle = '#222';
     ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText(this.profile.name.toUpperCase(), 0, 16);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.profile.name.toUpperCase(), 0, 13);
 
     // Patience bar
     if (this.state === 'waiting') {
