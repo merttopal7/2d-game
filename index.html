@@ -15,19 +15,36 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <style>
+    #char-select-layout {
+      display: flex;
+      gap: 24px;
+      width: 100%;
+      margin-top: 15px;
+    }
+    #char-select-left {
+      flex: 1;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    #char-select-right {
+      flex: 0 0 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      justify-content: center;
+    }
     #char-options-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
       width: 100%;
-      margin: 20px 0;
     }
     .char-option {
       background: rgba(255, 255, 255, 0.05);
       border: 2px solid var(--clr-border);
       border-radius: 12px;
-      padding: 10px;
+      padding: 8px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -44,12 +61,23 @@
       box-shadow: 0 0 15px rgba(0, 201, 167, 0.4);
     }
     .char-option canvas {
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
     }
     @media (max-width: 600px) {
+      #char-select-layout {
+        flex-direction: row; /* Stay side by side as requested */
+        gap: 12px;
+      }
+      #char-select-right {
+        flex: 0 0 160px;
+      }
       #char-options-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .modal-card {
+        padding: 15px;
+        width: 95%;
       }
     }
   </style>
@@ -320,19 +348,27 @@
 
   <!-- ── CHARACTER SELECTION ── -->
   <div id="screen-char-select" class="screen">
-    <div class="modal-card" style="max-width: 600px;">
-      <h2><i data-lucide="user"></i> Odyoloğunuzu Seçin</h2>
-      <p style="color:var(--clr-muted)">Odyoloğunuzun görünümüne ve ismine karar ver!</p>
+    <div class="modal-card" style="max-width: 650px;">
+      <h2 style="margin-bottom: 5px;"><i data-lucide="user"></i> Odyoloğunuzu Seçin</h2>
+      <p style="color:var(--clr-muted); font-size: 13px;">Görünümünüzü ve isminizi belirleyin.</p>
       
-      <div class="input-group" style="width: 100%; margin-top: 10px;">
-        <label for="input-char-name" style="display: block; font-size: 14px; color: var(--clr-muted); margin-bottom: 8px;">Odyolog İsmi</label>
-        <input type="text" id="input-char-name" placeholder="İsminizi girin..." maxlength="12" style="width: 100%; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--clr-border); color: #fff; font-family: inherit; font-size: 16px;">
-      </div>
+      <div id="char-select-layout">
+        <!-- Left: Heads -->
+        <div id="char-select-left">
+          <div id="char-options-grid">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
 
-      <div id="char-options-grid">
-        <!-- Rendered via JS -->
+        <!-- Right: Input & Confirm -->
+        <div id="char-select-right">
+          <div class="input-group">
+            <label for="input-char-name" style="display: block; font-size: 13px; color: var(--clr-muted); margin-bottom: 6px;">Odyolog İsmi</label>
+            <input type="text" id="input-char-name" placeholder="İsminiz..." maxlength="12" style="width: 100%; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--clr-border); color: #fff; font-family: inherit; font-size: 14px;">
+          </div>
+          <button id="btn-char-select-confirm" class="btn-primary" disabled style="width: 100%; padding: 12px;">Seçimi Tamamla</button>
+        </div>
       </div>
-      <button id="btn-char-select-confirm" class="btn-primary" disabled>Seçimi Tamamla</button>
     </div>
   </div>
 
