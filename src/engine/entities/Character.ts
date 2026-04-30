@@ -65,7 +65,7 @@ export class Character extends Entity {
     ctx.fill();
   }
 
-protected drawHead(ctx: CanvasRenderingContext2D, style: number) {
+  public drawHead(ctx: CanvasRenderingContext2D, style: number) {
   ctx.save();
   
   // Reposition and Scale to match body
@@ -526,9 +526,11 @@ export class Player extends Character {
   public clickTime: number = 0;
   public eatTimer: number = 0;
   public eatEmoji: string = '🥪';
+  public headStyle: number = 0;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, headStyle: number = 0) {
     super(x, y);
+    this.headStyle = headStyle;
   }
 
   update(dt: number) {
@@ -602,7 +604,7 @@ export class Player extends Character {
     ctx.beginPath(); ctx.arc(26 - armSwing, 26 + armRaise, 4, 0, Math.PI * 2); ctx.fill();
 
     // Head
-    this.drawHead(ctx, 0); // Doctor uses style 0
+    this.drawHead(ctx, this.headStyle); 
 
     // Eating visual
     if (this.eatTimer > 0) {

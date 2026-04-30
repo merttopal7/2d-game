@@ -24,6 +24,7 @@ export class GameLoop {
   private consultation!: ConsultationUI;
   private travelUI!: TravelUI;
   private waitingUI!: WaitingListUI;
+  private selectedHeadStyle: number | null = null;
 
   private lastTime = 0;
   private animId = 0;
@@ -683,6 +684,59 @@ export class GameLoop {
 
     // Title screen
     this.loadHighScores();
+
+    // Char select confirm
+    document.getElementById('btn-char-select-confirm')!.addEventListener('click', () => this.confirmCharSelection());
+  }
+
+  private openCharSelection() {
+    this.showScreen('screen-char-select');
+    this.renderCharOptions();
+  }
+
+  private renderCharOptions() {
+    const grid = document.getElementById('char-options-grid')!;
+    grid.innerHTML = '';
+    this.selectedHeadStyle = null;
+    const confirmBtn = document.getElementById('btn-char-select-confirm') as HTMLButtonElement;
+    confirmBtn.disabled = true;
+
+    for (let i = 0; i < 10; i++) {
+      const opt = document.createElement('div');
+      opt.className = 'char-option';
+      opt.dataset.index = i.toString();
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = 100;
+      canvas.height = 100;
+      const ctx = canvas.getContext('2d')!;
+      
+      // We need a dummy character instance to call drawHead
+      // Since drawHead is now public, we can call it on the player or any instance
+      ctx.translate(50, 70); // Center the head
+      ctx.scale(1.2, 1.2);
+      this.renderer.player.drawHead(ctx, i);
+
+      opt.appendChild(canvas);
+      
+      opt.addEventListener('click', () => {
+        grid.querySelectorAll('.char-option').forEach(el => el.classList.remove('selected'));
+        opt.classList.add('selected');
+        this.selectedHeadStyle = i;
+        confirmBtn.disabled = false;
+        this.audio.playClick();
+      });
+      
+      grid.appendChild(opt);
+    }
+  }
+
+  private async confirmCharSelection() {
+    if (this.selectedHeadStyle === null) return;
+    await db.setVal('playerHead', this.selectedHeadStyle);
+    this.renderer.player.headStyle = this.selectedHeadStyle;
+    this.audio.playClick();
+    this.startGame(); // Re-call startGame to proceed
   }
 
   private showConfirm(title: string, msg: string, onYes: () => void) {
@@ -716,6 +770,14 @@ export class GameLoop {
 
   async startGame() {
     resetCustomerIds();
+    
+    // Check for character selection first
+    const savedHead = await db.getVal('playerHead', null);
+    if (savedHead === null) {
+      this.openCharSelection();
+      return;
+    }
+    this.renderer.player.headStyle = savedHead;
     
     const savedMoney = await db.getVal('money', 500);
     const savedTotalServed = await db.getVal('totalServed', 0);

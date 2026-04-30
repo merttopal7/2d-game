@@ -73,6 +73,13 @@ export class ShopDatabase extends Dexie {
       return false;
     }
   }
+
+  async clearAll() {
+    await this.transaction('rw', this.gameState, this.plants, async () => {
+      await this.gameState.clear();
+      await this.plants.clear();
+    });
+  }
 }
 
 export const db = new ShopDatabase();

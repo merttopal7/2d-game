@@ -15,6 +15,44 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <style>
+    #char-options-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      width: 100%;
+      margin: 20px 0;
+    }
+    .char-option {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid var(--clr-border);
+      border-radius: 12px;
+      padding: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .char-option:hover {
+      border-color: var(--clr-teal);
+      background: rgba(0, 201, 167, 0.1);
+    }
+    .char-option.selected {
+      border-color: var(--clr-teal);
+      background: rgba(0, 201, 167, 0.2);
+      box-shadow: 0 0 15px rgba(0, 201, 167, 0.4);
+    }
+    .char-option canvas {
+      width: 60px;
+      height: 60px;
+    }
+    @media (max-width: 600px) {
+      #char-options-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
 <div id="game-wrapper">
@@ -277,6 +315,18 @@
       <button id="btn-resume" class="btn-primary"><i data-lucide="play"></i> Devam Et</button>
       <button id="btn-toggle-audio" class="btn-secondary"><i data-lucide="volume-2"></i> Ses Açık</button>
       <button id="btn-pause-quit" class="btn-secondary"><i data-lucide="home"></i> Ana Menü</button>
+    </div>
+  </div>
+
+  <!-- ── CHARACTER SELECTION ── -->
+  <div id="screen-char-select" class="screen">
+    <div class="modal-card" style="max-width: 600px;">
+      <h2><i data-lucide="user"></i> Karakterini Seç</h2>
+      <p style="color:var(--clr-muted)">Doktorunun görünümüne karar ver!</p>
+      <div id="char-options-grid">
+        <!-- Rendered via JS -->
+      </div>
+      <button id="btn-char-select-confirm" class="btn-primary" disabled>Seçimi Tamamla</button>
     </div>
   </div>
 
